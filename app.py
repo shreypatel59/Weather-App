@@ -10,7 +10,8 @@ from datetime import datetime
 app = Flask(__name__)
 
 # API Configuration
-WEATHER_API_KEY = "YOUR_API_KEY_HERE"  # Get free key from openweathermap.org
+# Get free API key from https://openweathermap.org/api
+WEATHER_API_KEY = "fc97243422a76b701b8430b97686a9b6"
 WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 @app.route('/')
@@ -26,7 +27,7 @@ def get_weather():
     """
     try:
         data = request.get_json()
-        city = data.get('city', '')
+        city = data.get('city', '').strip()
         
         if not city:
             return jsonify({'error': 'City name is required'}), 400
@@ -38,13 +39,16 @@ def get_weather():
             'units': 'metric'
         }
         
-        response = requests.get(WEATHER_API_URL, params=params)
+        response = requests.get(WEATHER_API_URL, params=params, timeout=5)
         
         if response.status_code == 404:
-            return jsonify({'error': 'City not found'}), 404
+            return jsonify({'error': 'City not found. Please check the spelling.'}), 404
+        
+        if response.status_code == 401:
+            return jsonify({'error': 'Invalid API key. Please contact admin.'}), 401
         
         if response.status_code != 200:
-            return jsonify({'error': 'Failed to fetch weather data'}), 500
+            return jsonify({'error': f'Weather service error: {response.status_code}'}), 500
         
         weather_data = response.json()
         
@@ -57,14 +61,18 @@ def get_weather():
             'humidity': weather_data['main']['humidity'],
             'pressure': weather_data['main']['pressure'],
             'description': weather_data['weather'][0]['description'],
-            'wind_speed': weather_data['wind']['speed'],
+            'wind_speed': round(weather_data['wind']['speed'], 1),
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         
         return jsonify(result), 200
     
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout. Please try again.'}), 504
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Connection error. Check your internet connection.'}), 503
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error: {str(e)}'}), 500
 
 @app.route('/api/weather/forecast', methods=['POST'])
 def get_forecast():
@@ -73,7 +81,7 @@ def get_forecast():
     """
     try:
         data = request.get_json()
-        city = data.get('city', '')
+        city = data.get('city', '').strip()
         
         if not city:
             return jsonify({'error': 'City name is required'}), 400
@@ -86,7 +94,7 @@ def get_forecast():
             'units': 'metric'
         }
         
-        response = requests.get(forecast_url, params=params)
+        response = requests.get(forecast_url, params=params, timeout=5)
         
         if response.status_code != 200:
             return jsonify({'error': 'Failed to fetch forecast data'}), 500
@@ -123,6 +131,9 @@ if __name__ == '__main__':
     if WEATHER_API_KEY == "YOUR_API_KEY_HERE":
         print("⚠️  WARNING: Please set your OpenWeatherMap API key in app.py")
         print("Get a free API key from: https://openweathermap.org/api")
+    else:
+        print("✅ API Key is set!")
     
     print("🌤️  Weather App is running on http://localhost:5000")
+    print("Press CTRL+C to stop the server")
     app.run(debug=True, host='0.0.0.0', port=5000)
