@@ -38,9 +38,13 @@
         }
 
         .search-box {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .search-input-wrapper {
             display: flex;
             gap: 10px;
-            margin-bottom: 30px;
         }
 
         input[type="text"] {
@@ -75,6 +79,37 @@
 
         button:active {
             transform: translateY(0);
+        }
+
+        .suggested-cities {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .suggested-city {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggested-city:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .suggested-label {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .weather-info {
@@ -152,9 +187,24 @@
             border-radius: 8px;
             margin-top: 20px;
             display: none;
+            border-left: 4px solid #c33;
         }
 
         .error.show {
+            display: block;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            border-left: 4px solid #3c3;
+        }
+
+        .success.show {
             display: block;
         }
 
@@ -182,6 +232,63 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .forecast {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            display: none;
+        }
+
+        .forecast.show {
+            display: block;
+        }
+
+        .forecast h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .forecast-items {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .forecast-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            min-width: 120px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .forecast-date {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .forecast-temp {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .forecast-desc {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .timestamp {
+            text-align: right;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -189,13 +296,27 @@
         <h1>🌤️ Weather App</h1>
 
         <div class="search-box">
-            <input 
-                type="text" 
-                id="cityInput" 
-                placeholder="Enter city name..." 
-                autocomplete="off"
-            >
-            <button onclick="searchWeather()">Search</button>
+            <div class="search-input-wrapper">
+                <input 
+                    type="text" 
+                    id="cityInput" 
+                    placeholder="Enter city name..." 
+                    autocomplete="off"
+                >
+                <button onclick="searchWeather()">Search</button>
+            </div>
+
+            <span class="suggested-label">Popular Cities:</span>
+            <div class="suggested-cities">
+                <button class="suggested-city" onclick="searchCity('London')">🇬🇧 London</button>
+                <button class="suggested-city" onclick="searchCity('New York')">🇺🇸 New York</button>
+                <button class="suggested-city" onclick="searchCity('Paris')">🇫🇷 Paris</button>
+                <button class="suggested-city" onclick="searchCity('Tokyo')">🇯🇵 Tokyo</button>
+                <button class="suggested-city" onclick="searchCity('Sydney')">🇦🇺 Sydney</button>
+                <button class="suggested-city" onclick="searchCity('Dubai')">🇦🇪 Dubai</button>
+                <button class="suggested-city" onclick="searchCity('Singapore')">🇸🇬 Singapore</button>
+                <button class="suggested-city" onclick="searchCity('Mumbai')">🇮🇳 Mumbai</button>
+            </div>
         </div>
 
         <div class="loading" id="loading">
@@ -204,6 +325,7 @@
         </div>
 
         <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
 
         <div class="weather-info" id="weatherInfo">
             <div class="city-name" id="cityName"></div>
@@ -228,6 +350,13 @@
                     <div class="detail-value" id="windSpeed"></div>
                 </div>
             </div>
+
+            <div class="forecast" id="forecastSection">
+                <h3>📅 5-Day Forecast</h3>
+                <div class="forecast-items" id="forecastItems"></div>
+            </div>
+
+            <div class="timestamp" id="timestamp"></div>
         </div>
     </div>
 
@@ -241,18 +370,33 @@
             }
         });
 
+        function searchCity(city) {
+            cityInput.value = city;
+            searchWeather();
+        }
+
         function showLoading(show) {
             document.getElementById('loading').classList.toggle('show', show);
         }
 
         function showError(message) {
             const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
+            errorDiv.textContent = '❌ ' + message;
             errorDiv.classList.add('show');
+            document.getElementById('success').classList.remove('show');
         }
 
         function hideError() {
             document.getElementById('error').classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = '✅ ' + message;
+            successDiv.classList.add('show');
+            setTimeout(() => {
+                successDiv.classList.remove('show');
+            }, 2000);
         }
 
         async function searchWeather() {
@@ -276,14 +420,13 @@
                     body: JSON.stringify({ city: city })
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    const error = await response.json();
-                    showError(error.error || 'Failed to fetch weather data');
+                    showError(data.error || 'Failed to fetch weather data');
                     showLoading(false);
                     return;
                 }
-
-                const data = await response.json();
 
                 // Display current weather
                 document.getElementById('cityName').textContent = 
@@ -299,13 +442,59 @@
                     `${data.pressure} hPa`;
                 document.getElementById('windSpeed').textContent = 
                     `${data.wind_speed} m/s`;
+                document.getElementById('timestamp').textContent = 
+                    `Last updated: ${data.timestamp}`;
 
                 document.getElementById('weatherInfo').classList.add('show');
+                showSuccess(`Weather for ${data.city} loaded successfully!`);
+
+                // Fetch forecast
+                const forecastResponse = await fetch('/api/weather/forecast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ city: city })
+                });
+
+                if (forecastResponse.ok) {
+                    const forecastData = await forecastResponse.json();
+                    displayForecast(forecastData.forecasts);
+                }
 
             } catch (error) {
-                showError('An error occurred: ' + error.message);
+                showError('Network error: ' + error.message);
+                console.error('Error:', error);
             } finally {
                 showLoading(false);
+            }
+        }
+
+        function displayForecast(forecasts) {
+            const forecastSection = document.getElementById('forecastSection');
+            const forecastItems = document.getElementById('forecastItems');
+            forecastItems.innerHTML = '';
+
+            if (forecasts && forecasts.length > 0) {
+                forecasts.forEach(forecast => {
+                    const date = new Date(forecast.date);
+                    const dateStr = date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    const item = document.createElement('div');
+                    item.className = 'forecast-item';
+                    item.innerHTML = `
+                        <div class="forecast-date">${dateStr}</div>
+                        <div class="forecast-temp">${forecast.temperature}°C</div>
+                        <div class="forecast-desc">${forecast.description}</div>
+                    `;
+                    forecastItems.appendChild(item);
+                });
+                forecastSection.classList.add('show');
             }
         }
     </script>
